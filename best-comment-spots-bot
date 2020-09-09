@@ -19,7 +19,7 @@ reddit = praw.Reddit(client_id = CLIENT_ID,
                          password = PASSWORD)
                          
 #quote unquote "banned" subs are ones you're unlikely to get many downvotes in due to how many comments there usually are on any given post
-banned_sub_list = ['actualpublicfreakouts','askreddit','roastme']
+banned_sub_list = ['actualpublicfreakouts','askreddit','roastme','pics','science','politicalcompassmemes']
 
 #ensure we only post a qualified comment once, but that we don't exclude all the submissions we've iterated over (submission gets added to posted only after
 # a comment is physically posted)
@@ -30,18 +30,18 @@ posted = []
 
 while True:
     def rcomment():
-        for submission in reddit.subreddit('popular').rising(limit=50):
+        for submission in reddit.subreddit('popular').rising(limit=75):
             if submission.subreddit not in banned_sub_list:
                 if submission.id not in posted:
                     # exclude mod/automod posts
                     if (submission.stickied == False) and (submission.distinguished == None):
-                        # submission has to have at least 5 comments but not more than 60, many low comment posts fizzle out and high comment ones go to 200 too quickly
-                        if submission.num_comments > 5 and submission.num_comments < 60:
+                        # submission has to have at least 7 comments but not more than 65, many low comment posts fizzle out and high comment ones go to 200 too quickly
+                        if submission.num_comments > 7 and submission.num_comments < 65:
                             # submission is between 30 minutes and 2 hours old
                             if int(time.time()) - int(submission.created_utc) > 1800 and int(time.time()) - int(submission.created_utc) < 7200:
                                 # excludes subs that are "too small" and "too large" (each term is up to your own opinion, because many sub-100k subs can get a good amount of 
                                 # downvotes (see r/UWMadison and r/madisonwi especially, and individual city, state, and college subs))
-                                if (submission.subreddit).subscribers > 100000 and (submission.subreddit).subscribers < 10000000 :
+                                if (submission.subreddit).subscribers > 100000 and (submission.subreddit).subscribers < 20000000 :
                                     parents = []
                                     submission.comment_sort = "confidence"
                                     submission.comments.replace_more(limit = None)
@@ -57,17 +57,19 @@ while True:
                                     if (top_comment.stickied == False) and (top_comment.distinguished == None):
                                         # if the top comment has no replies
                                         if len(top_comment.replies) == 0:
-                                            contrib = reddit.live(LIVE).contrib.add("Top comment link : https://old.reddit.com{0}".format(top_comment.permalink))
-                                            print(contrib)
-                                            posted.append(submission.id)
-                                            time.sleep(a)
+                                            if top_comment.score > 5:
+                                                contrib = reddit.live(LIVE).contrib.add("Top comment:\n\n> {0:.3500}\n\n Top comment link : https://old.reddit.com{1}\n\n Current post score: {2}, current comment score: {3}, number of comments: {4}".format(top_comment.body, top_comment.permalink, submission.score, top_comment.score, submission.num_comments))
+                                                print(contrib)
+                                                posted.append(submission.id)
+                                                time.sleep(a)
                                         # if the top comment's top reply has no replies
                                         elif len(top_comment.replies[0].replies) == 0:
-                                            # brackets are used to "format" something into the text you'll post, and you can add more than one thing by separating 
-                                            # arguments in the "format()" with commas and adding {n} for each new format
-                                            contrib = reddit.live(LIVE).contrib.add("Secondary comment link : https://old.reddit.com{0}".format(top_comment.replies[0].permalink))
-                                            print(contrib)
-                                            posted.append(submission.id)
-                                            time.sleep(a)
+                                            if top_comment.replies[0].score > 5:
+                                                # brackets are used to "format" something into the text you'll post, and you can add more than one thing by separating 
+                                                # arguments in the "format()" with commas and adding {n} for each new format
+                                                contrib = reddit.live(LIVE).contrib.add("Top comment:\n\n> {0:.3500}\n\n Secondary comment:\n\n> {1:.3500}\n\n Secondary comment link : https://old.reddit.com{2}\n\n Current post score: {3}, current comment score: {4}, number of comments: {5}".format(top_comment.body, top_comment.replies[0].body, top_comment.replies[0].permalink,submission.score, top_comment.replies[0].score, submission.num_comments))
+                                                print(contrib)
+                                                posted.append(submission.id)
+                                                time.sleep(a)
 
     rcomment()
